@@ -1,0 +1,62 @@
+# Java and Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.db
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# VS Code
+.vscode/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+/build/
+/nbproject/build-impl.xml
+
+# Eclipse (STS)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans/
+.sts4-cache/
+
+# Environment Files
+.env
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Spring Boot devtools (generated files)
+.spring-boot-devtools
+
+# Maven Wrapper scripts
+mvnw
+mvnw.cmd
+
+# Docker and docker-compose
+docker-compose.override.yml
+
+# Other files you might want to ignore:
+*.swp
+*.swo
+/src/main/resources/application.properties

@@ -12,6 +12,7 @@ public class ApiApplication {
 		System.setProperty("MYSQL_DATABASE", dotenv.get("MYSQL_DATABASE"));
 		System.setProperty("MYSQL_USER", dotenv.get("MYSQL_USER"));
 		System.setProperty("MYSQL_PASSWORD", dotenv.get("MYSQL_PASSWORD"));
+		System.setProperty("JWT_SECRET_KEY", dotenv.get("JWT_SECRET_KEY"));
 
 		SpringApplication.run(ApiApplication.class, args);
 	}

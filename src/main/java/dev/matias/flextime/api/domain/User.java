@@ -1,14 +1,12 @@
 package dev.matias.flextime.api.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,8 +21,10 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @EqualsAndHashCode(of = "id")
 public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -53,9 +53,10 @@ public class User implements UserDetails {
     private String password;
 
     @Lob
-    private String description = "";
+    private String description;
 
     @ManyToOne
+    @JsonBackReference
     private Company company;
 
     @Lob
@@ -70,11 +71,6 @@ public class User implements UserDetails {
 
     private boolean enabled = true;
 
-    @Override
-    public String getUsername() {
-        return username;
-    }
-
     public User(String username, UserRole role, String name, String lastName, String email, String password) {
         this.username = username;
         this.role = role;
@@ -82,6 +78,16 @@ public class User implements UserDetails {
         this.lastName = lastName;
         this.email = email;
         this.password = password;
+    }
+
+    public User(Company company){
+        super();
+        this.company = company;
+    }
+
+    @Override
+    public String getUsername() {
+        return username;
     }
 
     @Override
@@ -92,13 +98,17 @@ public class User implements UserDetails {
     }
 
     @Override
+    public String getPassword(){
+        return this.password;
+    }
+
+    @Override
     public boolean isEnabled() {
         return this.enabled;
     }
 
-
     @Override
-    public String toString(){
+    public String toString() {
         return "User{" +
                 "id=" + id +
                 ", username='" + username + '\'' +

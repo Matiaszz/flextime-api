@@ -9,3 +9,4 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 spring.docker.compose.enabled=false
 spring.flyway.enabled=false
+api.security.jwt.secret=${JWT_SECRET}

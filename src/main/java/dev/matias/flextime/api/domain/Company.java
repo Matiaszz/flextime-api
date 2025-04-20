@@ -1,7 +1,11 @@
 package dev.matias.flextime.api.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import dev.matias.flextime.api.repositories.CompanyRepository;
+import dev.matias.flextime.api.repositories.UserRepository;
 import jakarta.persistence.*;
+import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -10,9 +14,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +55,7 @@ public class Company implements UserDetails {
     private String name;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<User> workers = new ArrayList<>();
 
     @Column(nullable = false)
@@ -60,10 +67,22 @@ public class Company implements UserDetails {
     private String description = "";
 
 
-    public void addWorker(User user){
-        user.setRole(UserRole.WORKER);
-        user.setCompany(this);
-        workers.add(user);
+    @Transactional
+    public void addWorker(User user, UserRepository userRepository, CompanyRepository companyRepository){
+        if (user.getRole().equals(UserRole.WORKER) && user.getCompany() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This user already is a worker of another company. Please, ensure the user is a client-level before their assignment.");
+        }
+
+        if(!workers.contains(user)){
+            user.setRole(UserRole.WORKER);
+            user.setCompany(this);
+            workers.add(user);
+
+            userRepository.save(user);
+            companyRepository.save(this);
+        }
+
     }
 
     // Implementation methods
@@ -88,4 +107,5 @@ public class Company implements UserDetails {
     public boolean isEnabled() {
         return this.enabled;
     }
+
 }

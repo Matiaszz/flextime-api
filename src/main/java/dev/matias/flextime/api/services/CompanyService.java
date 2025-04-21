@@ -3,21 +3,24 @@ package dev.matias.flextime.api.services;
 import dev.matias.flextime.api.domain.Company;
 import dev.matias.flextime.api.domain.CompanyRole;
 import dev.matias.flextime.api.dtos.CompanyRegisterDTO;
+import dev.matias.flextime.api.repositories.CompanyRepository;
 import dev.matias.flextime.api.responses.CompanyResponse;
 import dev.matias.flextime.api.utils.CookieOptions;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
+import dev.matias.flextime.api.utils.ObjectBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.token.Token;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CompanyService {
+public class CompanyService implements UserDetailsService {
+
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private CompanyRepository companyRepository;
 
     @Autowired
     private TokenService tokenService;
@@ -25,16 +28,11 @@ public class CompanyService {
     @Autowired
     private CookieOptions cookieOptions;
 
+    @Autowired
+    private ObjectBuilder objectBuilder;
+
     public Company fromDTO(CompanyRegisterDTO dto) {
-        return Company.builder()
-                .username(dto.username())
-                .password(passwordEncoder.encode(dto.password()))
-                .name(dto.name())
-                .email(dto.email())
-                .description(dto.description())
-                .role(CompanyRole.COMPANY)
-                .enabled(true)
-                .build();
+        return objectBuilder.companyFromDTO(dto);
     }
 
     public ResponseEntity<CompanyResponse> generateTokenAndCreateCookie(Company company) {
@@ -46,13 +44,9 @@ public class CompanyService {
                 .body(new CompanyResponse(company));
     }
 
-    public Boolean hasCompanyToken(HttpServletRequest request){
-        String token = null;
-        for (Cookie cookie : request.getCookies()){
-            if (cookie.getName().equalsIgnoreCase("companyToken")){
-                token = cookie.getValue();
-            }
-        }
-        return token != null;
+    @Override
+    public UserDetails loadUserByUsername(String username) {
+        return companyRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Company not found with username: " + username));
     }
 }

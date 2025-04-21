@@ -1,10 +1,16 @@
 package dev.matias.flextime.api.config.security;
 
+import dev.matias.flextime.api.services.CompanyService;
+import dev.matias.flextime.api.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,6 +32,13 @@ public class SecurityConfig {
 
     @Autowired
     private CorsConfigurationSource corsConfigurationSource;
+
+    @Autowired
+    private CompanyService companyService;
+
+    @Autowired
+    private UserService userService;
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -49,10 +62,31 @@ public class SecurityConfig {
 
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    @Primary
+    @Bean(name = "userAuthenticationManager")
+    public AuthenticationManager userAuthenticationManager(HttpSecurity http) throws Exception {
+        var authManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+
+        DaoAuthenticationProvider userProvider = new DaoAuthenticationProvider();
+        userProvider.setUserDetailsService(userService);
+        userProvider.setPasswordEncoder(passwordEncoder());
+
+        authManagerBuilder.authenticationProvider(userProvider);
+        return authManagerBuilder.build();
     }
+
+    @Bean(name = "companyAuthenticationManager")
+    public AuthenticationManager companyAuthenticationManager(HttpSecurity http) throws Exception {
+        var authManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+
+        DaoAuthenticationProvider companyProvider = new DaoAuthenticationProvider();
+        companyProvider.setUserDetailsService(companyService);
+        companyProvider.setPasswordEncoder(passwordEncoder());
+
+        authManagerBuilder.authenticationProvider(companyProvider);
+        return authManagerBuilder.build();
+    }
+
 
 
     @Bean

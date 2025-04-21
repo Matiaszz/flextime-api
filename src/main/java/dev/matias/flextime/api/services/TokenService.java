@@ -5,10 +5,15 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import dev.matias.flextime.api.domain.Company;
 import dev.matias.flextime.api.domain.User;
+import dev.matias.flextime.api.responses.UserResponse;
 import dev.matias.flextime.api.utils.CookieOptions;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -19,52 +24,44 @@ public class TokenService {
     @Value("${api.security.jwt.secret}")
     private String secret;
 
-    public String generateUserToken(User user) {
+    @Autowired
+    private CookieOptions cookieOptions;
+
+    private String generateToken(String subject, String id, String role) {
         if (secret == null || secret.isBlank()) {
             throw new RuntimeException("Secret is not set! Check the environment variables.");
         }
 
         try {
-            log.info("Generating token for user...");
+            log.info("Generating token for subject: {}", subject);
             Algorithm algorithm = Algorithm.HMAC256(this.secret);
-            var token = JWT.create()
-                    .withSubject(user.getEmail())
-                    .withClaim("id", user.getId().toString())
-                    .withClaim("role", user.getRole().toString())
+            return JWT.create()
+                    .withSubject(subject)
+                    .withClaim("id", id)
+                    .withClaim("role", role)
                     .withExpiresAt(new Date(System.currentTimeMillis() + 86400000 * 2))
                     .sign(algorithm);
-
-            log.info("Generated token for user: {}", token);
-            return token;
-
         } catch (Exception e) {
-            log.error("Error generating token for user: {}", e.getMessage());
+            log.error("Error generating token: {}", e.getMessage());
             return null;
         }
     }
 
+    public String generateUserToken(User user) {
+        return generateToken(user.getEmail(), user.getId().toString(), user.getRole().toString());
+    }
+
     public String generateCompanyToken(Company company) {
-        if (secret == null || secret.isBlank()) {
-            throw new RuntimeException("Secret is not set! Check the environment variables.");
-        }
+        return generateToken(company.getUsername(), company.getId().toString(), company.getRole().toString());
+    }
 
-        try {
-            log.info("Generating token for company...");
-            Algorithm algorithm = Algorithm.HMAC256(this.secret);
-            var token = JWT.create()
-                    .withSubject(company.getUsername())
-                    .withClaim("id", company.getId().toString())
-                    .withClaim("role", company.getRole().toString())
-                    .withExpiresAt(new Date(System.currentTimeMillis() + 86400000 * 2))
-                    .sign(algorithm);
+    public ResponseEntity<UserResponse> generateUserTokenAndCreateCookie(User user) {
+        String token = generateUserToken(user);
+        ResponseCookie cookie = createCookie(token, "userToken", cookieOptions);
 
-            log.info("Generated token for company: {}", token);
-            return token;
-
-        } catch (Exception e) {
-            log.error("Error generating token for company: {}", e.getMessage());
-            return null;
-        }
+        return ResponseEntity.ok()
+                .header("Set-Cookie", cookie.toString())
+                .body(new UserResponse(user));
     }
 
     public String validateToken(String token) {
@@ -90,6 +87,25 @@ public class TokenService {
                 .path(opts.path)
                 .maxAge(opts.maxAge)
                 .build();
+    }
+
+    public boolean hasUserToken(HttpServletRequest request){
+        return hasToken(request, "userToken");
+    }
+
+    public boolean hasCompanyToken(HttpServletRequest request){
+        return hasToken(request, "companyToken");
+    }
+
+    private boolean hasToken(HttpServletRequest request, String cookieName){
+        if (request.getCookies() == null) return false;
+
+        for (Cookie cookie : request.getCookies()){
+            if (cookie.getName().equalsIgnoreCase(cookieName)){
+                return true;
+            }
+        }
+        return false;
     }
 
 }

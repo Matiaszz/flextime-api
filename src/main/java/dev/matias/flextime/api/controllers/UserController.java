@@ -6,10 +6,12 @@ import dev.matias.flextime.api.dtos.UserRegisterDTO;
 import dev.matias.flextime.api.repositories.UserRepository;
 import dev.matias.flextime.api.responses.UserResponse;
 import dev.matias.flextime.api.services.CompanyService;
+import dev.matias.flextime.api.services.TokenService;
 import dev.matias.flextime.api.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -30,11 +32,6 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
-
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
     @Autowired
     private UserService userService;
 
@@ -42,12 +39,16 @@ public class UserController {
     private CompanyService companyService;
 
     @Autowired
+    @Qualifier("userAuthenticationManager")
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private TokenService tokenService;
 
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@RequestBody UserRegisterDTO registerDTO, HttpServletRequest request){
-        if (companyService.hasCompanyToken(request)){
+        if (tokenService.hasCompanyToken(request)){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A company is already authenticated. Please logout first.");
         }
         if (userRepository.findByEmail(registerDTO.email()).isPresent()) {
@@ -61,12 +62,12 @@ public class UserController {
         User user = userService.fromDTO(registerDTO);
         userRepository.save(user);
 
-        return userService.generateTokenAndCreateCookie(user);
+        return tokenService.generateUserTokenAndCreateCookie(user);
     }
 
     @PostMapping("/login")
     public ResponseEntity<UserResponse> login(@RequestBody UserLoginDTO loginDTO, HttpServletRequest request) {
-        if (companyService.hasCompanyToken(request)){
+        if (tokenService.hasCompanyToken(request)){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A company is already authenticated. Please logout first.");
         }
 
@@ -80,10 +81,11 @@ public class UserController {
             authentication = authenticationManager.authenticate(usernamePassword);
         } catch (AuthenticationException e) {
             log.error("Login failed for user: {}", loginDTO.email());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password " + e);
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Invalid username or password or company is disabled");
         }
 
-        var response = userService.generateTokenAndCreateCookie((User) authentication.getPrincipal());
+        var response = tokenService.generateUserTokenAndCreateCookie((User) authentication.getPrincipal());
 
         log.info("Login successful for user: {}", loginDTO.email());
 

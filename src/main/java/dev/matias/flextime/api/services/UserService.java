@@ -6,6 +6,8 @@ import dev.matias.flextime.api.dtos.UserRegisterDTO;
 import dev.matias.flextime.api.repositories.UserRepository;
 import dev.matias.flextime.api.responses.UserResponse;
 import dev.matias.flextime.api.utils.CookieOptions;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -55,6 +57,15 @@ public class UserService implements UserDetailsService {
         return ResponseEntity.ok()
                 .header("Set-Cookie", cookie.toString())
                 .body(new UserResponse(user));
+    }
+    public Boolean hasUserToken(HttpServletRequest request){
+        String token = null;
+        for (Cookie cookie : request.getCookies()){
+            if (cookie.getName().equalsIgnoreCase("companyToken")){
+                token = cookie.getValue();
+            }
+        }
+        return token != null;
     }
 
     public UserDetails getLoggedUser(){

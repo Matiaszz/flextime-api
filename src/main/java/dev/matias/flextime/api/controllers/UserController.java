@@ -5,6 +5,7 @@ import dev.matias.flextime.api.dtos.UserLoginDTO;
 import dev.matias.flextime.api.dtos.UserRegisterDTO;
 import dev.matias.flextime.api.repositories.UserRepository;
 import dev.matias.flextime.api.responses.UserResponse;
+import dev.matias.flextime.api.services.CompanyService;
 import dev.matias.flextime.api.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -29,22 +30,32 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private CompanyService companyService;
 
     @Autowired
     private AuthenticationManager authenticationManager;
 
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody UserRegisterDTO registerDTO){
+    public ResponseEntity<UserResponse> register(@RequestBody UserRegisterDTO registerDTO, HttpServletRequest request){
+        if (companyService.hasCompanyToken(request)){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A company is already authenticated. Please logout first.");
+        }
         if (userRepository.findByEmail(registerDTO.email()).isPresent()) {
             log.warn("User {} already exists", registerDTO.username());
-            return ResponseEntity.badRequest().build();
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An user with email: " + registerDTO.email() + " already exists");
+        }
+        if (userRepository.findByUsername(registerDTO.username()).isPresent()){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An user with username: " + registerDTO.username() + " already exists");
         }
 
         User user = userService.fromDTO(registerDTO);
@@ -54,12 +65,13 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody UserLoginDTO loginDTO) {
+    public ResponseEntity<UserResponse> login(@RequestBody UserLoginDTO loginDTO, HttpServletRequest request) {
+        if (companyService.hasCompanyToken(request)){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A company is already authenticated. Please logout first.");
+        }
+
         User user = (User) userRepository.findByEmail(loginDTO.email())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        boolean isPasswordCorrect = passwordEncoder.matches(loginDTO.password(), user.getPassword());
-        log.info("Password match: {}", isPasswordCorrect);
 
         var usernamePassword = new UsernamePasswordAuthenticationToken(user.getUsername(), loginDTO.password());
         log.info("{}", usernamePassword);

@@ -38,10 +38,10 @@ public class SecurityFilter extends OncePerRequestFilter {
         String companyToken = recoverCompanyLoginToken(request);
         String userToken = recoverUserLoginToken(request);
 
-        if (companyToken != null && userToken != null) {
-            log.warn("Both companyToken and userToken received. Ambiguous authentication.");
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Multiple authentication tokens provided.");
-        }
+//        if (companyToken != null && userToken != null) {
+//            log.warn("Both companyToken and userToken received. Ambiguous authentication.");
+//            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Multiple authentication tokens provided.");
+//        }
 
         try {
             if (companyToken != null) {

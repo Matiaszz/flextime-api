@@ -5,6 +5,8 @@ import dev.matias.flextime.api.dtos.CompanyRegisterDTO;
 import dev.matias.flextime.api.repositories.CompanyRepository;
 import dev.matias.flextime.api.responses.CompanyResponse;
 import dev.matias.flextime.api.services.CompanyService;
+import dev.matias.flextime.api.services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,8 +27,12 @@ public class CompanyController {
     @Autowired
     private CompanyService companyService;
 
+    @Autowired
+    private UserService userService;
+
+
     @PostMapping("/register")
-    public ResponseEntity<CompanyResponse> register(@RequestBody @Valid CompanyRegisterDTO dto){
+    public ResponseEntity<CompanyResponse> register(@RequestBody @Valid CompanyRegisterDTO dto, HttpServletRequest request){
         if (companyRepository.findByUsername(dto.username()).isPresent()){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Company username already exists.");
         }
@@ -37,6 +43,10 @@ public class CompanyController {
 
         if (companyRepository.findByEmail(dto.email()).isPresent()){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Company with email: " + dto.email() + " already exists.");
+        }
+
+        if (userService.hasUserToken(request)){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An user is already authenticated. Please logout first.");
         }
 
         Company company = companyService.fromDTO(dto);

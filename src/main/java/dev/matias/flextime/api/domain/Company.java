@@ -10,10 +10,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -29,6 +26,7 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @EqualsAndHashCode(of = "id")
 public class Company implements UserDetails {
 
@@ -51,7 +49,7 @@ public class Company implements UserDetails {
     private String email;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -72,6 +70,10 @@ public class Company implements UserDetails {
         if (user.getRole().equals(UserRole.WORKER) && user.getCompany() != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This user already is a worker of another company. Please, ensure the user is a client-level before their assignment.");
+        }
+
+        if(!user.isEnabled()){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not enabled");
         }
 
         if(!workers.contains(user)){

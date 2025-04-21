@@ -1,16 +1,12 @@
 package dev.matias.flextime.api.controllers;
 
-import dev.matias.flextime.api.config.security.SecurityConfig;
 import dev.matias.flextime.api.domain.User;
 import dev.matias.flextime.api.dtos.UserLoginDTO;
 import dev.matias.flextime.api.dtos.UserRegisterDTO;
 import dev.matias.flextime.api.repositories.UserRepository;
 import dev.matias.flextime.api.responses.UserResponse;
-import dev.matias.flextime.api.services.TokenService;
 import dev.matias.flextime.api.services.UserService;
-import dev.matias.flextime.api.utils.CookieOptions;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -21,8 +17,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -41,14 +35,9 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private TokenService tokenService;
 
     @Autowired
     private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private CookieOptions cookieOptions;
 
 
     @PostMapping("/register")
@@ -90,14 +79,12 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<UserResponse> getUser(HttpServletRequest request) {
+    public ResponseEntity<UserResponse> getUser() {
         return ResponseEntity.ok(new UserResponse((User) userService.getLoggedUser()));
-
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
-
         ResponseCookie cookie = ResponseCookie.from("userToken", "").httpOnly(true).secure(true)
                 .sameSite("None").path("/").maxAge(0).build();
 

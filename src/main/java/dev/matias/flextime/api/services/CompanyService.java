@@ -8,13 +8,16 @@ import dev.matias.flextime.api.responses.CompanyResponse;
 import dev.matias.flextime.api.utils.CookieOptions;
 import dev.matias.flextime.api.utils.ObjectBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class CompanyService implements UserDetailsService {
@@ -42,6 +45,17 @@ public class CompanyService implements UserDetailsService {
         return ResponseEntity.ok()
                 .header("Set-Cookie", cookie.toString())
                 .body(new CompanyResponse(company));
+    }
+
+    public Company getLoggedCompany() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof UserDetails userDetails) {
+            return companyRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
+        }
+
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Company not authenticated");
     }
 
     @Override

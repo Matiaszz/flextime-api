@@ -5,7 +5,6 @@ import dev.matias.flextime.api.dtos.UserLoginDTO;
 import dev.matias.flextime.api.dtos.UserRegisterDTO;
 import dev.matias.flextime.api.repositories.UserRepository;
 import dev.matias.flextime.api.responses.UserResponse;
-import dev.matias.flextime.api.services.CompanyService;
 import dev.matias.flextime.api.services.TokenService;
 import dev.matias.flextime.api.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +19,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,9 +32,6 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private CompanyService companyService;
 
     @Autowired
     @Qualifier("userAuthenticationManager")
@@ -93,7 +88,10 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<UserResponse> getUser() {
+    public ResponseEntity<UserResponse> getUser(HttpServletRequest request) {
+        if (tokenService.hasCompanyToken(request)){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An company is already authenticated. Please logout first.");
+        }
         return ResponseEntity.ok(new UserResponse((User) userService.getLoggedUser()));
     }
 

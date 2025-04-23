@@ -1,16 +1,16 @@
 package dev.matias.flextime.api.dtos;
 
+import dev.matias.flextime.api.validations.Password;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
 
 public record CompanyRegisterDTO(
         @NotEmpty(message = "Username is required")
         String username,
 
         @NotBlank(message = "Password is required")
-        @Size(min = 6, message = "Password must be at least 6 characters")
+        @Password
         String password,
 
         @Email(message = "Email must be valid")

@@ -8,6 +8,7 @@ import dev.matias.flextime.api.responses.UserResponse;
 import dev.matias.flextime.api.services.TokenService;
 import dev.matias.flextime.api.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -42,7 +43,7 @@ public class UserController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody UserRegisterDTO registerDTO, HttpServletRequest request){
+    public ResponseEntity<UserResponse> register(@RequestBody @Valid UserRegisterDTO registerDTO, HttpServletRequest request){
         if (tokenService.hasCompanyToken(request)){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A company is already authenticated. Please logout first.");
         }
@@ -61,7 +62,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody UserLoginDTO loginDTO, HttpServletRequest request) {
+    public ResponseEntity<UserResponse> login(@RequestBody @Valid UserLoginDTO loginDTO, HttpServletRequest request) {
         if (tokenService.hasCompanyToken(request)){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A company is already authenticated. Please logout first.");
         }

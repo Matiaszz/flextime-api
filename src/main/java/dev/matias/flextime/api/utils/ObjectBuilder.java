@@ -1,11 +1,10 @@
 package dev.matias.flextime.api.utils;
 
-import dev.matias.flextime.api.domain.Company;
-import dev.matias.flextime.api.domain.CompanyRole;
-import dev.matias.flextime.api.domain.User;
-import dev.matias.flextime.api.domain.UserRole;
+import dev.matias.flextime.api.domain.*;
+import dev.matias.flextime.api.dtos.AppointmentCreateDTO;
 import dev.matias.flextime.api.dtos.CompanyRegisterDTO;
 import dev.matias.flextime.api.dtos.UserRegisterDTO;
+import dev.matias.flextime.api.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +16,10 @@ public class ObjectBuilder {
     @Autowired
     @Lazy
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    @Lazy
+    private UserService userService;
 
     public User userFromDTO(UserRegisterDTO dto){
         return User.builder()
@@ -39,6 +42,17 @@ public class ObjectBuilder {
                 .description(dto.description())
                 .role(CompanyRole.COMPANY)
                 .enabled(true)
+                .build();
+    }
+
+    public Appointment appointmentFromDTO(AppointmentCreateDTO dto){
+        return Appointment.builder()
+                .client((User) userService.getLoggedUser())
+                .name(dto.name())
+                .slug(dto.name().replace(" ", "-"))
+                .description(dto.description())
+                .startTime(dto.startTime())
+                .endTime(dto.endTime())
                 .build();
     }
 }

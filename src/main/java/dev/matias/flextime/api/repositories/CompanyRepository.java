@@ -11,6 +11,5 @@ import java.util.UUID;
 public interface CompanyRepository extends JpaRepository<Company, UUID> {
     Optional<Company> findByUsername(String username);
     Optional<Company> findByName(String name);
-
     Optional<Company> findByEmail(@Email(message = "Email must be valid") @NotBlank(message = "Email is required") String email);
 }

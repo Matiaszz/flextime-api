@@ -49,7 +49,7 @@ public class ObjectBuilder {
         return Appointment.builder()
                 .client((User) userService.getLoggedUser())
                 .name(dto.name())
-                .slug(dto.name().replace(" ", "-"))
+                .slug(dto.name().replace(" ", "-").toLowerCase())
                 .description(dto.description())
                 .startTime(dto.startTime())
                 .endTime(dto.endTime())

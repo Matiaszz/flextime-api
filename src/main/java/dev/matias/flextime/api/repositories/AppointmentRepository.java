@@ -11,5 +11,5 @@ import java.util.UUID;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, UUID> {
     Optional<List<Appointment>> findByCompany_Name(String companyName);
-    Optional<List<Appointment>> findBySlug(String slug);
+    Optional<Appointment> findBySlug(String slug);
 }

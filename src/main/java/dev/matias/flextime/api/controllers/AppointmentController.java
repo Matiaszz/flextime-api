@@ -46,12 +46,21 @@ public class AppointmentController {
 
     }
 
-    @GetMapping("/{companyName}")
+    @GetMapping("/company/{companyName}")
     public ResponseEntity<List<AppointmentResponse>> getCompanyAppointments(@PathVariable String companyName){
         List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found")).stream().map(AppointmentResponse::new).toList();
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
+                .stream().map(AppointmentResponse::new).toList();
 
         return ResponseEntity.ok(companyAppointments);
+    }
+
+    @GetMapping("/appointment/{appointmentSlug}")
+    public ResponseEntity<AppointmentResponse> getAppointmentBySlug(@PathVariable String appointmentSlug){
+        Appointment appointment= appointmentRepository.findBySlug(appointmentSlug).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment slug not found."));
+
+        return ResponseEntity.ok(new AppointmentResponse(appointment));
     }
 
 }

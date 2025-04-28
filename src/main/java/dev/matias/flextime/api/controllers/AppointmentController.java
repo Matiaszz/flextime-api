@@ -2,7 +2,6 @@ package dev.matias.flextime.api.controllers;
 
 import dev.matias.flextime.api.domain.Appointment;
 import dev.matias.flextime.api.domain.Company;
-import dev.matias.flextime.api.domain.User;
 import dev.matias.flextime.api.dtos.AppointmentCreateDTO;
 import dev.matias.flextime.api.repositories.AppointmentRepository;
 import dev.matias.flextime.api.repositories.CompanyRepository;
@@ -71,4 +70,18 @@ public class AppointmentController {
         return ResponseEntity.ok(new AppointmentResponse(appointment));
     }
 
+    @GetMapping("/company/{companyName}/confirmed")
+    public ResponseEntity<List<AppointmentResponse>> getConfirmedAppointmentsByCompany(@PathVariable String companyName){
+        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
+                .stream()
+                .filter(Appointment::isConfirmed)
+                .map(AppointmentResponse::new).toList();
+
+        if (companyAppointments.isEmpty()){
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(companyAppointments);
+    }
 }

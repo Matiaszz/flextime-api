@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.naming.AuthenticationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,7 +17,11 @@ import java.util.Map;
 public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ExceptionModel> handleResponseStatusException(ResponseStatusException e){
-        return ResponseEntity.status(e.getStatusCode()).body(new ExceptionModel(e.getStatusCode().value(), e.getMessage(), e.getReason()));
+        return ResponseEntity.status(e.getStatusCode()).body(
+                new ExceptionModel(
+                        e.getStatusCode().value(),
+                        e.getClass().getSimpleName(),
+                        e.getReason()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -29,5 +33,16 @@ public class GlobalExceptionHandler {
         }
 
         return new ResponseEntity<>(errors, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
+    public ResponseEntity<ExceptionModel> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException ex) {
+        ExceptionModel error = new ExceptionModel(
+                HttpStatus.CONFLICT.value(),
+                ex.getClass().getSimpleName(),
+                "Database constraint violated. Please check your input."
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 }

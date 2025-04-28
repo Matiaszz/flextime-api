@@ -7,6 +7,7 @@ import dev.matias.flextime.api.dtos.AppointmentCreateDTO;
 import dev.matias.flextime.api.repositories.AppointmentRepository;
 import dev.matias.flextime.api.repositories.CompanyRepository;
 import dev.matias.flextime.api.responses.AppointmentResponse;
+import dev.matias.flextime.api.services.AppointmentService;
 import dev.matias.flextime.api.services.UserService;
 import dev.matias.flextime.api.utils.ObjectBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,15 +33,22 @@ public class AppointmentController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private AppointmentService appointmentService;
+
     @PostMapping("/{companyName}")
     public ResponseEntity<AppointmentResponse> createAppointment(@PathVariable String companyName, @RequestBody AppointmentCreateDTO dto){
         Company referencedCompany = companyRepository.findByName(companyName).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found"));
 
+        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
+                .stream().map(AppointmentResponse::new).toList();
+
         Appointment appointment = objectBuilder.appointmentFromDTO(dto);
         appointment.setCompany(referencedCompany);
 
-        appointmentRepository.save(appointment);
+        appointmentService.createAppointment(appointment, companyAppointments);
 
         return ResponseEntity.ok().body(new AppointmentResponse(appointment));
 

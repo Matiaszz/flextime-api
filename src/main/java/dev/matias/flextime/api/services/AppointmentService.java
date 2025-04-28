@@ -1,6 +1,9 @@
 package dev.matias.flextime.api.services;
 
 import dev.matias.flextime.api.domain.Appointment;
+import dev.matias.flextime.api.domain.Company;
+import dev.matias.flextime.api.domain.User;
+import dev.matias.flextime.api.dtos.AppointmentCreateDTO;
 import dev.matias.flextime.api.repositories.AppointmentRepository;
 import dev.matias.flextime.api.responses.AppointmentResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,23 +19,42 @@ public class AppointmentService {
     @Autowired
     private AppointmentRepository appointmentRepository;
 
-    public void createAppointment(Appointment appointment, List<AppointmentResponse> companyAppointments){
-
+    public boolean hasOverlap(Appointment appointment, List<AppointmentResponse> companyAppointments){
         LocalDateTime appointmentStartTime = appointment.getStartTime();
         LocalDateTime appointmentEndTime = appointment.getEndTime();
 
-
-
+        boolean overlapped = companyAppointments.stream().anyMatch(existing -> appointmentStartTime.isBefore(existing.endTime()) &&
+                appointmentEndTime.isAfter(existing.startTime())
+        );
         if (appointmentStartTime.isAfter(appointmentEndTime)){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Start time can't be after than end time.");
         }
 
-        boolean hasOverlap = companyAppointments.stream().anyMatch(existing -> appointmentStartTime.isBefore(existing.endTime()) &&
-                appointmentEndTime.isAfter(existing.startTime())
-        );
+        return overlapped;
+    }
 
-        if (hasOverlap) {
+    public void updateAppointment(Appointment appointment, AppointmentCreateDTO appointmentCreateDTO, List<AppointmentResponse> companyAppointments){
+        if (appointmentCreateDTO.name() != null){
+            appointment.setName(appointmentCreateDTO.name());
+            appointment.setSlug(appointmentCreateDTO.name().toLowerCase().replace(" ", "-"));
+        }
+
+        if (appointmentCreateDTO.description() != null){
+            appointment.setDescription(appointmentCreateDTO.description());
+        }
+
+        if (appointmentCreateDTO.startTime() != null) {
+            appointment.setStartTime(appointmentCreateDTO.startTime());
+        }
+        if (appointmentCreateDTO.endTime() != null) {
+            appointment.setEndTime(appointmentCreateDTO.endTime());
+        }
+        boolean overlapped = hasOverlap(appointment, companyAppointments);
+        if (overlapped){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment overlaps with an existing one.");
+        }
+        if (appointmentCreateDTO.confirmed() != null) {
+            appointment.setConfirmed(appointmentCreateDTO.confirmed());
         }
 
         appointmentRepository.save(appointment);

@@ -4,7 +4,9 @@ import dev.matias.flextime.api.domain.Appointment;
 import dev.matias.flextime.api.domain.Company;
 import dev.matias.flextime.api.domain.User;
 import dev.matias.flextime.api.dtos.AppointmentCreateDTO;
+import dev.matias.flextime.api.dtos.AppointmentUpdateDTO;
 import dev.matias.flextime.api.repositories.AppointmentRepository;
+import dev.matias.flextime.api.repositories.CompanyRepository;
 import dev.matias.flextime.api.responses.AppointmentResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,12 @@ import java.util.List;
 public class AppointmentService {
     @Autowired
     private AppointmentRepository appointmentRepository;
+
+    @Autowired
+    private CompanyRepository companyRepository;
+
+    @Autowired
+    private UserService userService;
 
     public boolean hasOverlap(Appointment appointment, List<AppointmentResponse> companyAppointments){
         LocalDateTime appointmentStartTime = appointment.getStartTime();
@@ -33,30 +41,48 @@ public class AppointmentService {
         return overlapped;
     }
 
-    public void updateAppointment(Appointment appointment, AppointmentCreateDTO appointmentCreateDTO, List<AppointmentResponse> companyAppointments){
-        if (appointmentCreateDTO.name() != null){
-            appointment.setName(appointmentCreateDTO.name());
-            appointment.setSlug(appointmentCreateDTO.name().toLowerCase().replace(" ", "-"));
+    public Appointment updateAppointment(AppointmentUpdateDTO appointmentUpdateDTO, String companyName, String appointmentSlug){
+        Appointment appointment = appointmentRepository.findBySlug(appointmentSlug).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment slug not found."));
+
+        Company company = companyRepository.findByName(companyName).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found"));
+
+        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
+                .stream()
+                .filter(app -> app != appointment)
+                .map(AppointmentResponse::new).toList();
+
+        User user = (User) userService.getLoggedUser();
+
+        if (!(appointment.getClient().equals(user) || company.getWorkers().contains(user))) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized to edit this appointment.");
         }
 
-        if (appointmentCreateDTO.description() != null){
-            appointment.setDescription(appointmentCreateDTO.description());
+        if (appointmentUpdateDTO.name() != null){
+            appointment.setName(appointmentUpdateDTO.name());
+            appointment.setSlug(appointmentUpdateDTO.name().toLowerCase().replace(" ", "-"));
         }
 
-        if (appointmentCreateDTO.startTime() != null) {
-            appointment.setStartTime(appointmentCreateDTO.startTime());
+        if (appointmentUpdateDTO.description() != null){
+            appointment.setDescription(appointmentUpdateDTO.description());
         }
-        if (appointmentCreateDTO.endTime() != null) {
-            appointment.setEndTime(appointmentCreateDTO.endTime());
+
+        if (appointmentUpdateDTO.startTime() != null) {
+            appointment.setStartTime(appointmentUpdateDTO.startTime());
+        }
+        if (appointmentUpdateDTO.endTime() != null) {
+            appointment.setEndTime(appointmentUpdateDTO.endTime());
         }
         boolean overlapped = hasOverlap(appointment, companyAppointments);
         if (overlapped){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment overlaps with an existing one.");
         }
-        if (appointmentCreateDTO.confirmed() != null) {
-            appointment.setConfirmed(appointmentCreateDTO.confirmed());
+        if (appointmentUpdateDTO.confirmed() != null) {
+            appointment.setConfirmed(appointmentUpdateDTO.confirmed());
         }
 
-        appointmentRepository.save(appointment);
+        return appointmentRepository.save(appointment);
     }
 }

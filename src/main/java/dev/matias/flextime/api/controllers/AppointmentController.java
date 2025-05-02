@@ -4,6 +4,7 @@ import dev.matias.flextime.api.domain.Appointment;
 import dev.matias.flextime.api.domain.Company;
 import dev.matias.flextime.api.domain.User;
 import dev.matias.flextime.api.dtos.AppointmentCreateDTO;
+import dev.matias.flextime.api.dtos.AppointmentUpdateDTO;
 import dev.matias.flextime.api.repositories.AppointmentRepository;
 import dev.matias.flextime.api.repositories.CompanyRepository;
 import dev.matias.flextime.api.responses.AppointmentResponse;
@@ -77,26 +78,8 @@ public class AppointmentController {
     }
 
     @PatchMapping("/appointment/{companyName}/{appointmentSlug}/")
-    public ResponseEntity<AppointmentResponse> patchAppointmentBySlug(@PathVariable String companyName, @PathVariable String appointmentSlug, @RequestBody @Valid AppointmentCreateDTO appointmentCreateDTO){
-        Appointment appointment = appointmentRepository.findBySlug(appointmentSlug).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment slug not found."));
-
-        Company company = companyRepository.findByName(companyName).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found"));
-
-        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
-                .stream()
-                .filter(app -> app != appointment)
-                .map(AppointmentResponse::new).toList();
-
-        User user = (User) userService.getLoggedUser();
-
-        if (!(appointment.getClient().equals(user) || company.getWorkers().contains(user))) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized to edit this appointment.");
-        }
-
-        appointmentService.updateAppointment(appointment, appointmentCreateDTO, companyAppointments);
+    public ResponseEntity<AppointmentResponse> patchAppointmentBySlug(@PathVariable String companyName, @PathVariable String appointmentSlug, @RequestBody @Valid AppointmentUpdateDTO appointmentUpdateDTO){
+        Appointment appointment = appointmentService.updateAppointment(appointmentUpdateDTO, companyName, appointmentSlug);
 
         return ResponseEntity.ok(new AppointmentResponse(appointment));
     }

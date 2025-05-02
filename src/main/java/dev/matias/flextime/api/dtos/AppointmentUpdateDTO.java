@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 
-public record AppointmentCreateDTO(@NotNull String name, String description,@NotNull LocalDateTime startTime, @NotNull LocalDateTime endTime, Boolean confirmed) {
+public record AppointmentUpdateDTO(String name, String description,LocalDateTime startTime, LocalDateTime endTime, Boolean confirmed) {
 
-    public AppointmentCreateDTO(Appointment appointment){
+    public AppointmentUpdateDTO(Appointment appointment){
         this(
                 appointment.getName(),
                 appointment.getDescription(),

@@ -35,32 +35,21 @@ public class AppointmentController {
     @Autowired
     private AppointmentService appointmentService;
 
-    @PostMapping("/{companyName}/")
-    public ResponseEntity<AppointmentResponse> createAppointment(@PathVariable String companyName, @RequestBody @Valid AppointmentCreateDTO dto){
-        Company referencedCompany = companyRepository.findByName(companyName).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found"));
+    @GetMapping("/company/{companyName}/confirmed/")
+    public ResponseEntity<List<AppointmentResponse>> getConfirmedAppointmentsByCompany(@PathVariable String companyName){
+        List<AppointmentResponse> companyAppointments = appointmentService.getConfirmedCompanyAppointments(companyName);
 
-        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
-                .stream().map(AppointmentResponse::new).toList();
-
-        Appointment appointment = objectBuilder.appointmentFromDTO(dto);
-        appointment.setCompany(referencedCompany);
-
-        if(!appointmentService.hasOverlap(appointment, companyAppointments)){
-            appointmentRepository.save(appointment);
-            return ResponseEntity.ok().body(new AppointmentResponse(appointment));
+        if (companyAppointments.isEmpty()){
+            return ResponseEntity.noContent().build();
         }
 
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment overlaps with an existing one.");
-
-
+        return ResponseEntity.ok(companyAppointments);
     }
 
     @GetMapping("/company/{companyName}/")
     public ResponseEntity<List<AppointmentResponse>> getCompanyAppointments(@PathVariable String companyName){
         List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
                 .stream().map(AppointmentResponse::new).toList();
 
         return ResponseEntity.ok(companyAppointments);
@@ -81,14 +70,27 @@ public class AppointmentController {
         return ResponseEntity.ok(new AppointmentResponse(appointment));
     }
 
-    @GetMapping("/company/{companyName}/confirmed/")
-    public ResponseEntity<List<AppointmentResponse>> getConfirmedAppointmentsByCompany(@PathVariable String companyName){
-        List<AppointmentResponse> companyAppointments = appointmentService.getConfirmedCompanyAppointments(companyName);
 
-        if (companyAppointments.isEmpty()){
-            return ResponseEntity.noContent().build();
+
+    @PostMapping("/{companyName}/")
+    public ResponseEntity<AppointmentResponse> createAppointment(@PathVariable String companyName, @RequestBody @Valid AppointmentCreateDTO dto){
+        Company referencedCompany = companyRepository.findByName(companyName).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found"));
+
+        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
+                .stream().map(AppointmentResponse::new).toList();
+
+        Appointment appointment = objectBuilder.appointmentFromDTO(dto);
+        appointment.setCompany(referencedCompany);
+
+        if(!appointmentService.hasOverlap(appointment, companyAppointments)){
+            appointmentRepository.save(appointment);
+            return ResponseEntity.ok().body(new AppointmentResponse(appointment));
         }
 
-        return ResponseEntity.ok(companyAppointments);
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment overlaps with an existing one.");
+
+
     }
 }

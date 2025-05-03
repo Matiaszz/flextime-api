@@ -9,6 +9,8 @@ import dev.matias.flextime.api.repositories.AppointmentRepository;
 import dev.matias.flextime.api.repositories.CompanyRepository;
 import dev.matias.flextime.api.responses.AppointmentResponse;
 import dev.matias.flextime.api.services.AppointmentService;
+import dev.matias.flextime.api.services.CompanyService;
+import dev.matias.flextime.api.services.TokenService;
 import dev.matias.flextime.api.services.UserService;
 import dev.matias.flextime.api.utils.ObjectBuilder;
 import jakarta.validation.Valid;
@@ -31,6 +33,15 @@ public class AppointmentController {
 
     @Autowired
     private ObjectBuilder objectBuilder;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private CompanyService companyService;
+
+    @Autowired
+    private TokenService tokenService;
 
     @Autowired
     private AppointmentService appointmentService;
@@ -90,7 +101,41 @@ public class AppointmentController {
         }
 
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment overlaps with an existing one.");
+    }
 
+    @DeleteMapping("/{companyName}/{appointmentSlug}/")
+    public ResponseEntity<Void> deleteAppointment(@PathVariable String companyName, @PathVariable String appointmentSlug){
+        List<Appointment> companyAppointments = appointmentService.getAppointmentsByCompany(companyName);
+        Appointment appointment = appointmentService.getAppointmentBySlug(appointmentSlug);
+        Object loggedEntity = tokenService.getLoggedEntity();
 
+        if (loggedEntity == null){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User/Company not authenticated");
+        }
+
+        if (loggedEntity instanceof User user){
+            if (user.getCompany() == null){
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is a client, cannot delete any appointment");
+            }
+
+            if (!user.getCompany().getName().equals(companyName)){
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User aren't an worker from " + companyName);
+            }
+            appointmentRepository.delete(appointment);
+            return ResponseEntity.ok().build();
+        }
+        Company company = (Company) loggedEntity;
+
+        if (!company.getName().equals(companyName)){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "This company aren't owner of the appointment.");
+        }
+
+        if (!companyAppointments.contains(appointment)){
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Appointment " + appointment.getSlug() + " not in " + companyName + " appointments");
+        }
+
+        appointmentRepository.delete(appointment);
+        return ResponseEntity.ok().build();
     }
 }

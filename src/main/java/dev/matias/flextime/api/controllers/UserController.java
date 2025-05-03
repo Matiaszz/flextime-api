@@ -67,7 +67,7 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A company is already authenticated. Please logout first.");
         }
 
-        User user = (User) userRepository.findByEmail(loginDTO.email())
+        User user = userRepository.findByEmail(loginDTO.email())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         var usernamePassword = new UsernamePasswordAuthenticationToken(user.getUsername(), loginDTO.password());

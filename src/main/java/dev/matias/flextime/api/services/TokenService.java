@@ -5,6 +5,8 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import dev.matias.flextime.api.domain.Company;
 import dev.matias.flextime.api.domain.User;
+import dev.matias.flextime.api.repositories.CompanyRepository;
+import dev.matias.flextime.api.repositories.UserRepository;
 import dev.matias.flextime.api.responses.UserResponse;
 import dev.matias.flextime.api.utils.CookieOptions;
 import jakarta.servlet.http.Cookie;
@@ -12,9 +14,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
 
@@ -26,6 +32,12 @@ public class TokenService {
 
     @Autowired
     private CookieOptions cookieOptions;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private CompanyRepository companyRepository;
 
     private String generateToken(String subject, String id, String role) {
         if (secret == null || secret.isBlank()) {
@@ -46,6 +58,25 @@ public class TokenService {
             return null;
         }
     }
+
+    public Object getLoggedEntity() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("Getting logged entity...");
+
+        if (principal instanceof UserDetails userDetails) {
+            String username = userDetails.getUsername();
+
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user != null) return user;
+
+            Company company = companyRepository.findByUsername(username).orElse(null);
+            if (company != null) return company;
+        }
+
+        log.info("User not authenticated.");
+        return null;
+    }
+
 
     public String generateUserToken(User user) {
         return generateToken(user.getEmail(), user.getId().toString(), user.getRole().toString());

@@ -99,4 +99,9 @@ public class AppointmentService {
 
         return appointmentRepository.save(appointment);
     }
+
+    public List<Appointment> getAppointmentsByCompany(String companyName){
+        return appointmentRepository.findByCompany_Name(companyName).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company Not found."));
+    }
 }

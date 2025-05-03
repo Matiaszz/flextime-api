@@ -2,8 +2,10 @@ package dev.matias.flextime.api.services;
 
 import dev.matias.flextime.api.domain.Company;
 import dev.matias.flextime.api.domain.CompanyRole;
+import dev.matias.flextime.api.domain.User;
 import dev.matias.flextime.api.dtos.CompanyRegisterDTO;
 import dev.matias.flextime.api.repositories.CompanyRepository;
+import dev.matias.flextime.api.repositories.UserRepository;
 import dev.matias.flextime.api.responses.CompanyResponse;
 import dev.matias.flextime.api.utils.CookieOptions;
 import dev.matias.flextime.api.utils.ObjectBuilder;
@@ -27,6 +29,9 @@ public class CompanyService implements UserDetailsService {
 
     @Autowired
     private TokenService tokenService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private CookieOptions cookieOptions;
@@ -56,6 +61,10 @@ public class CompanyService implements UserDetailsService {
         }
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Company not authenticated");
+    }
+
+    public void putUserInWorkersList(User user, Company company){
+        company.addWorker(user, userRepository, companyRepository);
     }
 
     @Override

@@ -27,6 +27,20 @@ public class AppointmentService {
     @Autowired
     private UserService userService;
 
+    public List<AppointmentResponse> getConfirmedCompanyAppointments(String companyName){
+
+        return appointmentRepository.findByCompany_Name(companyName).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
+                .stream()
+                .filter(Appointment::isConfirmed)
+                .map(AppointmentResponse::new).toList();
+    }
+
+    public Appointment getAppointmentBySlug(String slug){
+        return appointmentRepository.findBySlug(slug).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment slug not found."));
+    }
+
     public boolean hasOverlap(Appointment appointment, List<AppointmentResponse> companyAppointments){
         LocalDateTime appointmentStartTime = appointment.getStartTime();
         LocalDateTime appointmentEndTime = appointment.getEndTime();

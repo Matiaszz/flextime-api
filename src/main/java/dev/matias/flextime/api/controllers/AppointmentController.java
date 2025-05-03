@@ -33,9 +33,6 @@ public class AppointmentController {
     private ObjectBuilder objectBuilder;
 
     @Autowired
-    private UserService userService;
-
-    @Autowired
     private AppointmentService appointmentService;
 
     @PostMapping("/{companyName}/")
@@ -71,8 +68,8 @@ public class AppointmentController {
 
     @GetMapping("/appointment/{appointmentSlug}/")
     public ResponseEntity<AppointmentResponse> getAppointmentBySlug(@PathVariable String appointmentSlug){
-        Appointment appointment = appointmentRepository.findBySlug(appointmentSlug).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment slug not found."));
+
+        Appointment appointment = appointmentService.getAppointmentBySlug(appointmentSlug);
 
         return ResponseEntity.ok(new AppointmentResponse(appointment));
     }
@@ -86,11 +83,7 @@ public class AppointmentController {
 
     @GetMapping("/company/{companyName}/confirmed/")
     public ResponseEntity<List<AppointmentResponse>> getConfirmedAppointmentsByCompany(@PathVariable String companyName){
-        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
-                .stream()
-                .filter(Appointment::isConfirmed)
-                .map(AppointmentResponse::new).toList();
+        List<AppointmentResponse> companyAppointments = appointmentService.getConfirmedCompanyAppointments(companyName);
 
         if (companyAppointments.isEmpty()){
             return ResponseEntity.noContent().build();

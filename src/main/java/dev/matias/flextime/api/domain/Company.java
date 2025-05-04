@@ -25,7 +25,6 @@ import java.util.UUID;
 @Entity
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "id")
 public class Company implements UserDetails {
@@ -64,42 +63,6 @@ public class Company implements UserDetails {
     @Lob
     private String description = "";
 
-
-    @Transactional
-    public void addWorker(User user, UserRepository userRepository, CompanyRepository companyRepository){
-
-        if (user.getRole().equals(UserRole.WORKER) && user.getCompany() == this){
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "This user already works in this company.");
-        }
-
-        if (user.getRole().equals(UserRole.WORKER) && user.getCompany() != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "This user already is a worker of another company. Please, ensure the user is a client-level before their assignment.");
-        }
-
-        if(!user.isEnabled()){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not enabled");
-        }
-
-        if (user.getCompany() == null && user.getRole().equals(UserRole.WORKER)){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "User is WORKER but has no company. This should never happen.");
-        }
-
-        if (user.getCompany() != null && user.getRole().equals(UserRole.CLIENT)){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "User is CLIENT but has a company. This should never happen.");
-        }
-
-
-        user.setRole(UserRole.WORKER);
-        user.setCompany(this);
-        workers.add(user);
-
-        userRepository.save(user);
-        companyRepository.save(this);
-
-
-    }
-
     // Implementation methods
 
     @Override
@@ -121,6 +84,11 @@ public class Company implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.enabled;
+    }
+
+
+    public Company() {
+        this.workers = new ArrayList<>();
     }
 
 }

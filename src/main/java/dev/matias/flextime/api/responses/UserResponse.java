@@ -14,14 +14,12 @@ public record UserResponse(
         String lastName,
         String email,
         String description,
-        Object company,
+        CompanyMinimalResponse company,
         String profileImageURL,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         boolean enabled,
-
         Collection<? extends GrantedAuthority> authorities
-
 ) {
     public UserResponse(User user) {
         this(user.getId().toString(),
@@ -31,7 +29,7 @@ public record UserResponse(
                 user.getLastName(),
                 user.getEmail(),
                 user.getDescription(),
-                user.getCompany(),
+                user.getCompany() == null ? null : new CompanyMinimalResponse(user.getCompany()),
                 user.getProfileImageURL(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),

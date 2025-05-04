@@ -26,7 +26,6 @@ public record CompanyResponse(
                 company.getRole(),
                 company.isEnabled(),
                 company.getWorkers() != null ? company.getWorkers().stream().map(WorkerDTO::new).toList() : null
-
         );
     }
 }

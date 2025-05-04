@@ -1,8 +1,11 @@
 package dev.matias.flextime.api.controllers;
 
 import dev.matias.flextime.api.domain.Company;
+import dev.matias.flextime.api.domain.User;
+import dev.matias.flextime.api.dtos.AddWorkerDTO;
 import dev.matias.flextime.api.dtos.CompanyLoginDTO;
 import dev.matias.flextime.api.dtos.CompanyRegisterDTO;
+import dev.matias.flextime.api.dtos.WorkerDTO;
 import dev.matias.flextime.api.repositories.CompanyRepository;
 import dev.matias.flextime.api.responses.CompanyResponse;
 import dev.matias.flextime.api.services.CompanyService;
@@ -38,8 +41,6 @@ public class CompanyController {
     @Autowired
     @Qualifier("companyAuthenticationManager")
     private AuthenticationManager authenticationManager;
-
-
 
 
     @PostMapping("/register")
@@ -91,6 +92,23 @@ public class CompanyController {
         return ResponseEntity.ok(new CompanyResponse(companyService.getLoggedCompany()));
 
     }
+
+    @PostMapping("/{companyName}/add-worker")
+    public ResponseEntity<CompanyResponse> addWorkerAtCompany(@PathVariable String companyName, @RequestBody AddWorkerDTO user){
+        if(tokenService.getLoggedEntity() instanceof User){
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "To add worker in a company, your account must be a COMPANY ");
+        }
+
+        Company company = companyService.getLoggedCompany();
+        if (!company.getName().equals(companyName)){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Logged company must be the URI owner.");
+        }
+
+        companyService.addWorker(user.email(), companyName);
+        return ResponseEntity.ok(new CompanyResponse(company));
+    }
+
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {

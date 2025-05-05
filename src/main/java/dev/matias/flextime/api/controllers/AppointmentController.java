@@ -26,19 +26,8 @@ import java.util.List;
 @RequestMapping("/api/appointments")
 public class AppointmentController {
     @Autowired
-    private AppointmentRepository appointmentRepository;
-
-    @Autowired
     private CompanyRepository companyRepository;
 
-    @Autowired
-    private ObjectBuilder objectBuilder;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private CompanyService companyService;
 
     @Autowired
     private TokenService tokenService;
@@ -59,9 +48,10 @@ public class AppointmentController {
 
     @GetMapping("/company/{companyName}/")
     public ResponseEntity<List<AppointmentResponse>> getCompanyAppointments(@PathVariable String companyName){
-        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
-                .stream().map(AppointmentResponse::new).toList();
+        List<AppointmentResponse> companyAppointments = appointmentService.getAppointmentsByCompany(companyName)
+                .stream()
+                .map(AppointmentResponse::new)
+                .toList();
 
         return ResponseEntity.ok(companyAppointments);
     }
@@ -85,22 +75,7 @@ public class AppointmentController {
 
     @PostMapping("/{companyName}/")
     public ResponseEntity<AppointmentResponse> createAppointment(@PathVariable String companyName, @RequestBody @Valid AppointmentCreateDTO dto){
-        Company referencedCompany = companyRepository.findByName(companyName).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found"));
-
-        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
-                .stream().map(AppointmentResponse::new).toList();
-
-        Appointment appointment = objectBuilder.appointmentFromDTO(dto);
-        appointment.setCompany(referencedCompany);
-
-        if(!appointmentService.hasOverlap(appointment, companyAppointments)){
-            appointmentRepository.save(appointment);
-            return ResponseEntity.ok().body(new AppointmentResponse(appointment));
-        }
-
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment overlaps with an existing one.");
+        return ResponseEntity.ok(appointmentService.createAppointment(companyName, dto));
     }
 
     @DeleteMapping("/{companyName}/{appointmentSlug}/")
@@ -119,15 +94,15 @@ public class AppointmentController {
             }
 
             if (!user.getCompany().getName().equals(companyName)){
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User aren't an worker from " + companyName);
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not a worker from " + companyName);
             }
-            appointmentRepository.delete(appointment);
+            appointmentService.deleteAppointment(appointment);
             return ResponseEntity.ok().build();
         }
         Company company = (Company) loggedEntity;
 
         if (!company.getName().equals(companyName)){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "This company aren't owner of the appointment.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "This company is not owner of the appointment.");
         }
 
         if (!companyAppointments.contains(appointment)){
@@ -135,7 +110,7 @@ public class AppointmentController {
                     HttpStatus.UNAUTHORIZED, "Appointment " + appointment.getSlug() + " not in " + companyName + " appointments");
         }
 
-        appointmentRepository.delete(appointment);
+        appointmentService.deleteAppointment(appointment);
         return ResponseEntity.ok().build();
     }
 }

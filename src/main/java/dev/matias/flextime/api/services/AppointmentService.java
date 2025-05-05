@@ -8,6 +8,7 @@ import dev.matias.flextime.api.dtos.AppointmentUpdateDTO;
 import dev.matias.flextime.api.repositories.AppointmentRepository;
 import dev.matias.flextime.api.repositories.CompanyRepository;
 import dev.matias.flextime.api.responses.AppointmentResponse;
+import dev.matias.flextime.api.utils.ObjectBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,9 @@ public class AppointmentService {
 
     @Autowired
     private CompanyRepository companyRepository;
+
+    @Autowired
+    private ObjectBuilder objectBuilder;
 
     @Autowired
     private UserService userService;
@@ -65,7 +69,7 @@ public class AppointmentService {
         List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
                 .stream()
-                .filter(app -> app != appointment)
+                .filter(app -> !app.getId().equals(appointment.getId()) )
                 .map(AppointmentResponse::new).toList();
 
         User user = (User) userService.getLoggedUser();
@@ -98,6 +102,29 @@ public class AppointmentService {
         }
 
         return appointmentRepository.save(appointment);
+    }
+
+    public AppointmentResponse createAppointment(String companyName, AppointmentCreateDTO dto){
+        Company referencedCompany = companyRepository.findByName(companyName).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found"));
+
+        List<AppointmentResponse> companyAppointments = appointmentRepository.findByCompany_Name(companyName).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company name not found."))
+                .stream().map(AppointmentResponse::new).toList();
+
+        Appointment appointment = objectBuilder.appointmentFromDTO(dto);
+        appointment.setCompany(referencedCompany);
+
+        if(!hasOverlap(appointment, companyAppointments)){
+            appointmentRepository.save(appointment);
+            return new AppointmentResponse(appointment);
+        }
+
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment overlaps with an existing one.");
+    }
+
+    public void deleteAppointment(Appointment appointment){
+        appointmentRepository.delete(appointment);
     }
 
     public List<Appointment> getAppointmentsByCompany(String companyName){

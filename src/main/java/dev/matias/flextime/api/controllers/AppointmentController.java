@@ -29,6 +29,7 @@ import java.util.List;
 public class AppointmentController {
 
     private final TokenService tokenService;
+    private final UserService userService;
     private final AppointmentService appointmentService;
 
     @GetMapping("/company/{companyName}/confirmed/")
@@ -108,5 +109,12 @@ public class AppointmentController {
 
         appointmentService.deleteAppointment(appointment);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/my/")
+    public ResponseEntity<List<AppointmentResponse>> getUserAppointments(){
+        User user = (User) userService.getLoggedUser();
+        System.out.println("Logged entity: " + user);
+        return ResponseEntity.ok(appointmentService.getUserAppointments(user));
     }
 }

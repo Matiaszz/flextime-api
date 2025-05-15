@@ -131,4 +131,13 @@ public class AppointmentService {
         return appointmentRepository.findByCompany_Name(companyName).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company Not found."));
     }
+
+    public List<AppointmentResponse> getUserAppointments(User user){
+        List<Appointment> appointments = appointmentRepository.findByClient_Username(user.getUsername());
+
+
+        return appointments.stream()
+                .map(AppointmentResponse::new)
+                .toList();
+    }
 }

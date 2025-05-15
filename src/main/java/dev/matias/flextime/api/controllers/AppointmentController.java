@@ -14,6 +14,7 @@ import dev.matias.flextime.api.services.TokenService;
 import dev.matias.flextime.api.services.UserService;
 import dev.matias.flextime.api.utils.ObjectBuilder;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,16 +25,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
+@RequiredArgsConstructor
 public class AppointmentController {
-    @Autowired
-    private CompanyRepository companyRepository;
 
-
-    @Autowired
-    private TokenService tokenService;
-
-    @Autowired
-    private AppointmentService appointmentService;
+    private final TokenService tokenService;
+    private final AppointmentService appointmentService;
 
     @GetMapping("/company/{companyName}/confirmed/")
     public ResponseEntity<List<AppointmentResponse>> getConfirmedAppointmentsByCompany(@PathVariable String companyName){

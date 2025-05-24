@@ -3,7 +3,6 @@ package dev.matias.flextime.api.services;
 import dev.matias.flextime.api.domain.User;
 import dev.matias.flextime.api.dtos.UserRegisterDTO;
 import dev.matias.flextime.api.repositories.UserRepository;
-import dev.matias.flextime.api.utils.CookieOptions;
 import dev.matias.flextime.api.utils.ObjectBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,16 +11,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
 public class UserService implements UserDetailsService {
-
-    @Autowired
-    private CookieOptions cookieOptions;
 
     @Autowired
     private UserRepository userRepository;
@@ -33,7 +28,7 @@ public class UserService implements UserDetailsService {
         return objectBuilder.userFromDTO(dto);
     }
 
-    public UserDetails getLoggedUser(){
+    public UserDetails getLoggedUser() {
         // Logged user
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Getting logged user...");

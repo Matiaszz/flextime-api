@@ -2,20 +2,15 @@ package dev.matias.flextime.api.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import dev.matias.flextime.api.repositories.CompanyRepository;
-import dev.matias.flextime.api.repositories.UserRepository;
 import jakarta.persistence.*;
-import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,11 +61,12 @@ public class Company implements UserDetails {
     // Implementation methods
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities(){
+    public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.role.getPermissions().stream()
                 .map(SimpleGrantedAuthority::new)
                 .toList();
     }
+
     @Override
     public String getPassword() {
         return this.password;
@@ -85,7 +81,6 @@ public class Company implements UserDetails {
     public boolean isEnabled() {
         return this.enabled;
     }
-
 
     public Company() {
         this.workers = new ArrayList<>();

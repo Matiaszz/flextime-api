@@ -1,6 +1,5 @@
 package dev.matias.flextime.api.services;
 
-
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import dev.matias.flextime.api.domain.Company;
@@ -14,13 +13,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
 
@@ -67,16 +64,17 @@ public class TokenService {
             String username = userDetails.getUsername();
 
             User user = userRepository.findByUsername(username).orElse(null);
-            if (user != null) return user;
+            if (user != null)
+                return user;
 
             Company company = companyRepository.findByUsername(username).orElse(null);
-            if (company != null) return company;
+            if (company != null)
+                return company;
         }
 
         log.info("User not authenticated.");
         return null;
     }
-
 
     public String generateUserToken(User user) {
         return generateToken(user.getEmail(), user.getId().toString(), user.getRole().toString());
@@ -120,19 +118,20 @@ public class TokenService {
                 .build();
     }
 
-    public boolean hasUserToken(HttpServletRequest request){
+    public boolean hasUserToken(HttpServletRequest request) {
         return hasToken(request, "userToken");
     }
 
-    public boolean hasCompanyToken(HttpServletRequest request){
+    public boolean hasCompanyToken(HttpServletRequest request) {
         return hasToken(request, "companyToken");
     }
 
-    private boolean hasToken(HttpServletRequest request, String cookieName){
-        if (request.getCookies() == null) return false;
+    private boolean hasToken(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() == null)
+            return false;
 
-        for (Cookie cookie : request.getCookies()){
-            if (cookie.getName().equalsIgnoreCase(cookieName)){
+        for (Cookie cookie : request.getCookies()) {
+            if (cookie.getName().equalsIgnoreCase(cookieName)) {
                 return true;
             }
         }

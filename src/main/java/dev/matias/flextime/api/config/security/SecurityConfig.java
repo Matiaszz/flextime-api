@@ -5,13 +5,11 @@ import dev.matias.flextime.api.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -29,7 +27,6 @@ public class SecurityConfig {
     @Autowired
     private SecurityFilter securityFilter;
 
-
     @Autowired
     private CorsConfigurationSource corsConfigurationSource;
 
@@ -39,26 +36,24 @@ public class SecurityConfig {
     @Autowired
     private UserService userService;
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/user/register", "/api/user/login", "/api/company/register", "/api/company/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/user/register", "/api/user/login",
+                                "/api/company/register", "/api/company/login")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/company").authenticated()
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/company/**"
-                        ).hasRole("COMPANY")
-                        .anyRequest().authenticated()
-                )
+                                "/api/company/**")
+                        .hasRole("COMPANY")
+                        .anyRequest().authenticated())
                 .build();
     }
 
@@ -86,8 +81,6 @@ public class SecurityConfig {
         authManagerBuilder.authenticationProvider(companyProvider);
         return authManagerBuilder.build();
     }
-
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {

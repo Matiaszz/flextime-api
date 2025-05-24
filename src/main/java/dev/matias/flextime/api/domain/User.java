@@ -37,11 +37,11 @@ public class User implements UserDetails {
     private UserRole role = UserRole.CLIENT;
 
     @NotNull
-    @Size(min=3, max=35)
+    @Size(min = 3, max = 35)
     private String name;
 
     @NotNull
-    @Size(min=3, max=35)
+    @Size(min = 3, max = 35)
     private String lastName;
 
     @Email
@@ -80,7 +80,7 @@ public class User implements UserDetails {
         this.password = password;
     }
 
-    public User(Company company){
+    public User(Company company) {
         super();
         this.company = company;
     }
@@ -98,7 +98,7 @@ public class User implements UserDetails {
     }
 
     @Override
-    public String getPassword(){
+    public String getPassword() {
         return this.password;
     }
 
